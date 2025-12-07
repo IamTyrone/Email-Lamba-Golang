@@ -20,6 +20,7 @@ type EmailRequest struct {
 	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`
+	IsHtml  bool   `json:"isHtml"`
 }
 
 // Global SES client to reuse connections across warm starts
@@ -65,18 +66,29 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	// 3. EXECUTE: Send Email via SES
 	senderEmail := os.Getenv("SENDER_EMAIL") // Must be verified in SES
 
+	// Build the email body based on content type
+	emailBody := &types.Body{}
+	if emailReq.IsHtml {
+		emailBody.Html = &types.Content{
+			Charset: aws.String("UTF-8"),
+			Data:    aws.String(emailReq.Body),
+		}
+	} else {
+		emailBody.Text = &types.Content{
+			Charset: aws.String("UTF-8"),
+			Data:    aws.String(emailReq.Body),
+		}
+	}
+
 	input := &ses.SendEmailInput{
 		Destination: &types.Destination{
 			ToAddresses: []string{emailReq.To},
 		},
 		Message: &types.Message{
-			Body: &types.Body{
-				Text: &types.Content{
-					Data: aws.String(emailReq.Body),
-				},
-			},
+			Body: emailBody,
 			Subject: &types.Content{
-				Data: aws.String(emailReq.Subject),
+				Charset: aws.String("UTF-8"),
+				Data:    aws.String(emailReq.Subject),
 			},
 		},
 		Source: aws.String(senderEmail),
