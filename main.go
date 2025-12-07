@@ -17,6 +17,7 @@ import (
 
 // Request structure for the JSON body
 type EmailRequest struct {
+	From    string `json:"from"`
 	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`
@@ -64,7 +65,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	}
 
 	// 3. EXECUTE: Send Email via SES
-	senderEmail := os.Getenv("SENDER_EMAIL") // Must be verified in SES
+	senderEmail := emailReq.From // Must be verified in SES
 
 	// Build the email body based on content type
 	emailBody := &types.Body{}
